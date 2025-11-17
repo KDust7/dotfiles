@@ -11,10 +11,6 @@ if ! command -v bun >/dev/null 2>&1; then
   echo "Installing Bun..."
   curl -fsSL https://bun.sh/install | bash
 
-  # Make sure Bun loads each session
-  if ! grep -q 'source ~/.bun/_bun' "$HOME/.bashrc" 2>/dev/null; then
-    echo 'source ~/.bun/_bun' >> "$HOME/.bashrc"
-  fi
 fi
 
 # 🔥 Force reload bashrc NOW
