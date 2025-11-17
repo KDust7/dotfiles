@@ -1,25 +1,23 @@
 #!/usr/bin/env bash
 
-# Install Tailscale if missing
-if ! command -v tailscale >/dev/null 2>&1; then
-  curl -fsSL https://tailscale.com/install.sh | sh
-fi
+# Reload env so Bun/Tailscale PATH works
+source /home/codespace/.bashrc
 
 mkdir -p ~/.tailscale
 
-# Kill old instance (Codespaces sometimes reuse containers)
+# Stop old instance
 pkill tailscaled 2>/dev/null || true
 
-# Start daemon in userspace mode
+# Start new instance
 tailscaled \
   --tun=userspace-networking \
   --socks5-server=localhost:1055 \
-  --state=~/.tailscale/tailscaled.state \
-  --socket=~/.tailscale/tailscaled.sock &
+  --state=$HOME/.tailscale/tailscaled.state \
+  --socket=$HOME/.tailscale/tailscaled.sock &
 
 sleep 1
 
-# Bring up Tailscale (no authkey = prints login URL)
-tailscale --socket ~/.tailscale/tailscaled.sock up \
-  --hostname=codespace-$(hostname) \
-  --operator=$USER
+# Bring up interface (no auth key = prints a URL)
+tailscale \
+  --socket=$HOME/.tailscale/tailscaled.sock \
+  up --hostname=codespace-$(hostname) --operator=$USER
