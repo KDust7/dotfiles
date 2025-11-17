@@ -2,26 +2,43 @@
 
 echo "Dotfiles install.sh running..."
 
-# --- Ensure dirs ---
+###############################################
+# 1. Ensure needed dirs
+###############################################
 mkdir -p "$HOME/.devcontainer"
 mkdir -p "$HOME/.tailscale"
 
+
 ###############################################
-# 1. Install Bun
+# 2. Install Bun
 ###############################################
 if ! command -v bun >/dev/null 2>&1; then
-  echo "Installing Bun..."
+  echo "[install.sh] Installing Bun..."
   curl -fsSL https://bun.sh/install | bash
 
- 
+  # Ensure Bun auto-loads in future shells
+  if ! grep -q 'source ~/.bun/_bun' "$HOME/.bashrc"; then
+    echo 'source ~/.bun/_bun' >> "$HOME/.bashrc"
+  fi
 fi
 
-# 🔥 Reload environment now
+# Reload env so Bun is usable right away
 source /home/codespace/.bashrc
 
 
+
 ###############################################
-# 2. Write .devcontainer/devcontainer.json
+# 3. Install Tailscale (OFFICIAL command)
+###############################################
+if ! command -v tailscale >/dev/null 2>&1; then
+  echo "[install.sh] Installing Tailscale..."
+  curl -fsSL https://tailscale.com/install.sh | sh
+fi
+
+
+
+###############################################
+# 4. Generate devcontainer.json
 ###############################################
 cat > "$HOME/.devcontainer/devcontainer.json" << 'EOF'
 {
@@ -31,20 +48,21 @@ cat > "$HOME/.devcontainer/devcontainer.json" << 'EOF'
 EOF
 
 
+
 ###############################################
-# 3. Write post-start.sh (runs EVERY boot)
+# 5. Generate post-start.sh (runs every boot)
 ###############################################
 cat > "$HOME/.devcontainer/post-start.sh" << 'EOF'
 #!/usr/bin/env bash
 set -e
 
-echo "[post-start] running..."
+echo "[post-start] Starting Tailscale..."
 
 mkdir -p "$HOME/.tailscale"
 pkill tailscaled 2>/dev/null || true
 sleep 1
 
-# Start tailscaled
+# Boot tailscaled
 nohup tailscaled \
   --tun=userspace-networking \
   --socks5-server=localhost:1055 \
@@ -54,7 +72,7 @@ nohup tailscaled \
 
 sleep 2
 
-# Try to bring up Tailscale
+# Connect to Tailnet
 tailscale --socket "$HOME/.tailscale/tailscaled.sock" up \
   --hostname "codespace-$(hostname)" \
   --operator "$USER" \
@@ -63,5 +81,4 @@ EOF
 
 chmod +x "$HOME/.devcontainer/post-start.sh"
 
-echo "Wrote .devcontainer/devcontainer.json and post-start.sh"
 echo "install.sh finished."
