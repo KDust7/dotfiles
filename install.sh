@@ -16,10 +16,7 @@ if ! command -v bun >/dev/null 2>&1; then
   echo "[install.sh] Installing Bun..."
   curl -fsSL https://bun.sh/install | bash
 
-  # Ensure Bun auto-loads in future shells
-  if ! grep -q 'source ~/.bun/_bun' "$HOME/.bashrc"; then
-    echo 'source ~/.bun/_bun' >> "$HOME/.bashrc"
-  fi
+
 fi
 
 # Reload env so Bun is usable right away
