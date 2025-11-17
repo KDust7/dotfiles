@@ -40,8 +40,14 @@ fi
 cat > "$HOME/.devcontainer/devcontainer.json" << 'EOF'
 {
   "name": "Codespace",
-  "postStartCommand": "/bin/bash .devcontainer/post-start.sh"
+  "postStartCommand": "/bin/bash .devcontainer/post-start.sh",
+  "features": {
+  "ghcr.io/tailscale/codespace/tailscale": {
+    "version": "latest"
+  }
 }
+}
+
 EOF
 
 
