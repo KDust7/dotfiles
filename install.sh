@@ -2,33 +2,49 @@
 
 echo "Dotfiles install.sh running..."
 
-# --- Ensure folders exist ---
-mkdir -p "$HOME/.codespaces"
+# --- Ensure dirs ---
+mkdir -p "$HOME/.devcontainer"
 mkdir -p "$HOME/.tailscale"
 
-# --- Install Bun if missing ---
+###############################################
+# 1. Install Bun
+###############################################
 if ! command -v bun >/dev/null 2>&1; then
   echo "Installing Bun..."
   curl -fsSL https://bun.sh/install | bash
 
+ 
 fi
 
-# 🔥 Force reload bashrc NOW
+# 🔥 Reload environment now
 source /home/codespace/.bashrc
 
-# --- Write setup script for Tailscale autostart ---
-SETUP_FILE="$HOME/.codespaces/setup.sh"
 
-cat > "$SETUP_FILE" << 'EOF'
+###############################################
+# 2. Write .devcontainer/devcontainer.json
+###############################################
+cat > "$HOME/.devcontainer/devcontainer.json" << 'EOF'
+{
+  "name": "Codespace",
+  "postStartCommand": "/bin/bash .devcontainer/post-start.sh"
+}
+EOF
+
+
+###############################################
+# 3. Write post-start.sh (runs EVERY boot)
+###############################################
+cat > "$HOME/.devcontainer/post-start.sh" << 'EOF'
 #!/usr/bin/env bash
 set -e
 
-echo ">>> Starting Tailscale (setup.sh)..."
+echo "[post-start] running..."
 
 mkdir -p "$HOME/.tailscale"
 pkill tailscaled 2>/dev/null || true
 sleep 1
 
+# Start tailscaled
 nohup tailscaled \
   --tun=userspace-networking \
   --socks5-server=localhost:1055 \
@@ -38,13 +54,14 @@ nohup tailscaled \
 
 sleep 2
 
+# Try to bring up Tailscale
 tailscale --socket "$HOME/.tailscale/tailscaled.sock" up \
-   --hostname "codespace-$(hostname)" \
-   --operator "$USER" \
-   2>&1 | tee "$HOME/.tailscale/tailscale-up.log" || true
+  --hostname "codespace-$(hostname)" \
+  --operator "$USER" \
+  2>&1 | tee "$HOME/.tailscale/tailscale-up.log" || true
 EOF
 
-chmod +x "$SETUP_FILE"
+chmod +x "$HOME/.devcontainer/post-start.sh"
 
-echo "Created $SETUP_FILE"
+echo "Wrote .devcontainer/devcontainer.json and post-start.sh"
 echo "install.sh finished."
